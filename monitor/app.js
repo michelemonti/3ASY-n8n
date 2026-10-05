@@ -38,8 +38,20 @@ const workflows = [
 ];
 
 const attention = [
-  { title: "Repository activity watch", detail: "Authentication expired · 1 hour ago" },
-  { title: "Customer request triage", detail: "One execution needs review · 14 minutes ago" },
+  {
+    id: "decision-1042",
+    title: "Content release proposal",
+    detail: "Waiting for approval · 6 minutes ago",
+    context: "The agent prepared the next release package and recommends publishing it now.",
+    status: "pending",
+  },
+  {
+    id: "decision-1041",
+    title: "Customer request triage",
+    detail: "Ambiguous priority · 14 minutes ago",
+    context: "The agent needs a priority rule before assigning the request to a work queue.",
+    status: "pending",
+  },
 ];
 
 const metricsElement = document.querySelector("#metrics");
@@ -113,19 +125,40 @@ function renderWorkflows(filter = "") {
 }
 
 function renderAttention() {
-  document.querySelector("#attentionList").innerHTML = attention
+  const pending = attention.filter((item) => item.status === "pending");
+  document.querySelector("#attentionCount").textContent = pending.length;
+  document.querySelector("#attentionList").innerHTML = pending.length
+    ? pending
     .map(
       (item) => `
-        <div class="attention-item">
+        <div class="attention-item" data-decision-id="${item.id}">
           <span class="attention-icon">!</span>
-          <div>
+          <div class="attention-body">
             <strong>${item.title}</strong>
             <p>${item.detail}</p>
+            <p class="attention-context">${item.context}</p>
+            <div class="decision-actions">
+              <button class="decision-button approve" type="button" data-decision="approve">Approve</button>
+              <button class="decision-button reject" type="button" data-decision="reject">Reject</button>
+              <button class="decision-button" type="button" data-decision="clarify">Clarify</button>
+            </div>
+            <form class="clarification-form" hidden>
+              <textarea name="prompt" aria-label="Guidance for the agent" placeholder="Tell the agent how to proceed…"></textarea>
+              <button class="clarification-submit" type="submit">Send guidance</button>
+            </form>
           </div>
         </div>
       `,
     )
-    .join("");
+    .join("")
+    : `<div class="attention-item"><div class="attention-body"><strong>Inbox clear</strong><p>No agent is waiting for human input.</p></div></div>`;
+}
+
+async function submitDecision(id, decision, prompt = "") {
+  // Demo transport. The production adapter will POST the same payload to
+  // /api/decisions/:id without exposing n8n credentials to the browser.
+  await new Promise((resolve) => window.setTimeout(resolve, 280));
+  return { id, decision, prompt, accepted: true };
 }
 
 let toastTimer;
@@ -163,6 +196,51 @@ document.querySelector("#openN8nButton").addEventListener("click", () => {
 workflowRows.addEventListener("click", (event) => {
   const button = event.target.closest("[data-workflow]");
   if (button) showToast(`${button.dataset.workflow} · open in n8n after API connection`);
+});
+
+document.querySelector("#attentionList").addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-decision]");
+  if (!button) return;
+
+  const itemElement = button.closest("[data-decision-id]");
+  const id = itemElement.dataset.decisionId;
+  const decision = button.dataset.decision;
+
+  if (decision === "clarify") {
+    const form = itemElement.querySelector(".clarification-form");
+    form.hidden = !form.hidden;
+    if (!form.hidden) form.querySelector("textarea").focus();
+    return;
+  }
+
+  button.disabled = true;
+  await submitDecision(id, decision);
+  const item = attention.find((entry) => entry.id === id);
+  item.status = decision;
+  renderAttention();
+  showToast(decision === "approve" ? "Agent approved to continue" : "Agent instructed to stop");
+});
+
+document.querySelector("#attentionList").addEventListener("submit", async (event) => {
+  if (!event.target.matches(".clarification-form")) return;
+  event.preventDefault();
+
+  const itemElement = event.target.closest("[data-decision-id]");
+  const id = itemElement.dataset.decisionId;
+  const prompt = new FormData(event.target).get("prompt").trim();
+
+  if (!prompt) {
+    showToast("Write a short instruction for the agent first");
+    return;
+  }
+
+  const submitButton = event.target.querySelector("button[type='submit']");
+  submitButton.disabled = true;
+  await submitDecision(id, "clarify", prompt);
+  const item = attention.find((entry) => entry.id === id);
+  item.status = "clarified";
+  renderAttention();
+  showToast("Guidance sent to the agent");
 });
 
 renderMetrics("24h");

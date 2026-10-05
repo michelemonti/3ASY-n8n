@@ -543,6 +543,100 @@ h2 {
   line-height: 1.5;
 }
 
+.attention-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.attention-context {
+  margin-top: 9px !important;
+  padding: 9px 10px;
+  border-left: 2px solid rgba(167, 139, 250, 0.38);
+  border-radius: 0 8px 8px 0;
+  background: rgba(139, 92, 246, 0.045);
+  color: #b2b2bc !important;
+}
+
+.decision-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 13px;
+}
+
+.decision-button {
+  min-height: 29px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.decision-button:hover {
+  border-color: var(--border-strong);
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+}
+
+.decision-button.approve {
+  border-color: rgba(74, 222, 128, 0.18);
+  color: var(--green);
+}
+
+.decision-button.reject {
+  border-color: rgba(251, 113, 133, 0.18);
+  color: var(--red);
+}
+
+.clarification-form {
+  margin-top: 10px;
+}
+
+.clarification-form[hidden] {
+  display: none;
+}
+
+.clarification-form textarea {
+  width: 100%;
+  min-height: 72px;
+  resize: vertical;
+  padding: 10px 11px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  outline: none;
+  background: rgba(0, 0, 0, 0.18);
+  color: var(--text);
+  font: inherit;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.clarification-form textarea:focus {
+  border-color: rgba(167, 139, 250, 0.48);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.07);
+}
+
+.clarification-submit {
+  width: 100%;
+  min-height: 31px;
+  margin-top: 6px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(139, 92, 246, 0.14);
+  color: var(--violet-light);
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.clarification-submit:hover {
+  background: rgba(139, 92, 246, 0.21);
+}
+
 .workflows-panel {
   overflow: hidden;
 }
