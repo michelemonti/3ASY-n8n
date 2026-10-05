@@ -1,10 +1,42 @@
 # 3ASY n8n
 
-Self-hosted n8n on Railway with PostgreSQL, persistent storage, and public HTTPS webhooks.
+A practical self-hosted n8n distribution plus a lightweight 3ASY operations view.
 
-This repository is a fork of [n8n](https://github.com/n8n-io/n8n). It keeps the upstream source available for future 3ASY customizations and adds a repeatable Railway deployment path. The default deployment uses the official pinned Docker image rather than building this monorepo.
+n8n already provides an excellent workflow editor, debugger, and administration interface. This project does not replace it. The 3ASY layer is a deliberately simpler, read-only dashboard for everyday monitoring: health, execution volume, failures, and the workflows that need human attention.
 
-## Fast path
+## What is included
+
+| Layer | Purpose |
+| --- | --- |
+| n8n | Create, test, debug, and maintain workflows |
+| 3ASY Monitor | Understand operational status in a few seconds |
+| Railway setup | Reproduce a persistent self-hosted deployment |
+| PostgreSQL | Store n8n workflows, credentials, and execution data |
+
+The production deployment uses the official pinned n8n image. This repository remains a fork so upstream source and licensing stay explicit, while 3ASY-specific additions live in isolated directories.
+
+## 3ASY Monitor prototype
+
+The first interface draft is dependency-free and uses safe demo data:
+
+```bash
+cd monitor
+python3 -m http.server 4173
+```
+
+Open `http://localhost:4173`.
+
+The monitor is intentionally read-only. It shows:
+
+- system health;
+- active workflows and recent executions;
+- success rate and estimated time saved;
+- failures that need attention;
+- a direct path back to the full n8n interface.
+
+See [monitor/README.md](./monitor/README.md) for the integration boundary. In production, a server-side adapter will call the n8n Public API so an API key is never exposed in the browser.
+
+## Railway fast path
 
 ### 1. Prepare Railway
 
@@ -39,9 +71,9 @@ The script safely creates or reuses:
 
 The script is designed to be rerun. It does not replace an existing `N8N_ENCRYPTION_KEY`.
 
-### 3. Verify
+### 3. Verify persistence
 
-At the end, open the URL printed by the script and create the owner account. Then create a workflow named `00 — Installation check`:
+Open the URL printed by the script and create the owner account. Then create a workflow named `00 — Installation check`:
 
 ```text
 Manual Trigger → Edit Fields
@@ -50,25 +82,18 @@ status = ok
 
 Save it, redeploy n8n, and confirm that the workflow is still present.
 
-## Architecture
-
-| Component | Configuration |
-| --- | --- |
-| Runtime | Railway |
-| Application | `docker.n8n.io/n8nio/n8n:2.41.7` |
-| Database | Dedicated PostgreSQL service |
-| Persistent data | Railway volume at `/home/node/.n8n` |
-| Public traffic | HTTPS to port `5678` |
-| Healthcheck | `/healthz` |
-| Time zone | `Europe/Rome` |
-
 See [RAILWAY.md](./RAILWAY.md) for manual installation, troubleshooting, updates, and recovery notes.
 
-## Repository scope
+## Project boundary
 
-The repository can also hold reviewed source customizations, custom nodes, and reusable workflow exports with credentials removed. Never commit credentials, encryption keys, database exports, or workflow exports that contain secrets.
+Public, reusable material belongs here:
 
-The production service uses the official Docker image. Changes to this fork do not reach production until the Railway service is deliberately moved to a source build.
+- deployment automation;
+- the generic monitoring interface;
+- sanitized workflow templates;
+- generic operating patterns and documentation.
+
+Private project configuration does not belong here. Never commit credentials, encryption keys, database exports, customer data, private endpoints, or workflow exports containing secrets.
 
 ## Upstream and license
 
