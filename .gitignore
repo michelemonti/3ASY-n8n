@@ -89,6 +89,7 @@ packages/cli/src/commands/export/outputs
 .superset
 .conductor
 .n8n
+.railway/
 lefthook-local.yml
 IMPROVEMENTS.md
 .playwright-mcp

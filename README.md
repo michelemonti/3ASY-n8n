@@ -1,73 +1,75 @@
-![Banner image](https://user-images.githubusercontent.com/10284570/173569848-c624317f-42b1-45a6-ab09-f0ea3c247648.png)
+# 3ASY n8n
 
-# n8n – The Platform for AI Agents and Workflow Automation
+Self-hosted n8n on Railway with PostgreSQL, persistent storage, and public HTTPS webhooks.
 
-Fair-code platform to build and deploy AI agents and workflows. Combine a visual canvas with custom code, run it self-hosted or in the [cloud](https://app.n8n.cloud/login), and connect to 1500+ integrations. AI automation you can trust with real work, from prototype to production.
+This repository is a fork of [n8n](https://github.com/n8n-io/n8n). It keeps the upstream source available for future 3ASY customizations and adds a repeatable Railway deployment path. The default deployment uses the official pinned Docker image rather than building this monorepo.
 
-![n8n.io - Screenshot](https://raw.githubusercontent.com/n8n-io/n8n/master/assets/n8n-screenshot-readme.png)
+## Fast path
 
-## Key Capabilities
+### 1. Prepare Railway
 
-- **AI-Native Automation Platform**: Build and operationalize AI workflows and multi-step agents using your own data, models, and tools
-- **Model Flexibility, No Lock-In**: Connect to OpenAI, Anthropic, Google, or open-source models and switch providers without changing your architecture
-- **From Prototype to Production**: Design multi-step AI workflows with logic, tool use, human approvals, and full observability
-- **Code When You Need It**: Combine visual building with JavaScript, Python, and npm packages for advanced AI workflows
-- **Enterprise-Ready AI**: Self-host or deploy securely with role-based access, audit trails, and support for sensitive data
-- **Leverage What Already Exists**: 1500+ integrations and 9,000+ workflow [templates](https://n8n.io/workflows) to connect AI with your existing systems
+Create an empty Railway project. Then clone this repository and open it in a WSL terminal:
 
-## Quick Start
-
-Try n8n instantly with our install script (requires [Docker](https://www.docker.com/)):
-
-```sh
-curl -fsSL https://get.n8n.io | sh
+```bash
+git clone https://github.com/michelemonti/3ASY-n8n.git
+cd 3ASY-n8n
+npm install -g @railway/cli
+railway login --browserless
+railway link
 ```
 
-Or deploy manually with [Docker](https://docs.n8n.io/hosting/installation/docker/):
+Choose your Railway workspace, the empty project, and the `production` environment.
 
+### 2. Run the guided setup
+
+```bash
+bash railway-setup.sh
 ```
-docker volume create n8n_data
-docker run -it --rm --name n8n -p 5678:5678 -v n8n_data:/home/node/.n8n docker.n8n.io/n8nio/n8n
+
+The script safely creates or reuses:
+
+- a `Postgres` database;
+- an `n8n` service from `docker.n8n.io/n8nio/n8n:2.41.7`;
+- a persistent volume at `/home/node/.n8n`;
+- PostgreSQL references and the required n8n variables;
+- a stable encryption key when the service is new;
+- the Railway volume permission fix;
+- a Railway HTTPS domain on port `5678`;
+- the public editor and webhook URLs.
+
+The script is designed to be rerun. It does not replace an existing `N8N_ENCRYPTION_KEY`.
+
+### 3. Verify
+
+At the end, open the URL printed by the script and create the owner account. Then create a workflow named `00 — Installation check`:
+
+```text
+Manual Trigger → Edit Fields
+status = ok
 ```
 
-Access the editor at http://localhost:5678
+Save it, redeploy n8n, and confirm that the workflow is still present.
 
-## Resources
+## Architecture
 
-- 📚 [Documentation](https://docs.n8n.io)
-- 🔧 [1500+ Integrations](https://n8n.io/integrations)
-- 💡 [Example Workflows](https://n8n.io/workflows)
-- 🤖 [AI & LangChain Guide](https://docs.n8n.io/advanced-ai/)
-- 👥 [Community Forum](https://community.n8n.io)
-- 📖 [Community Tutorials](https://community.n8n.io/c/tutorials/28)
+| Component | Configuration |
+| --- | --- |
+| Runtime | Railway |
+| Application | `docker.n8n.io/n8nio/n8n:2.41.7` |
+| Database | Dedicated PostgreSQL service |
+| Persistent data | Railway volume at `/home/node/.n8n` |
+| Public traffic | HTTPS to port `5678` |
+| Healthcheck | `/healthz` |
+| Time zone | `Europe/Rome` |
 
-## Support
+See [RAILWAY.md](./RAILWAY.md) for manual installation, troubleshooting, updates, and recovery notes.
 
-Need help? Our community forum is the place to get support and connect with other users:
-[community.n8n.io](https://community.n8n.io)
+## Repository scope
 
-## License
+The repository can also hold reviewed source customizations, custom nodes, and reusable workflow exports with credentials removed. Never commit credentials, encryption keys, database exports, or workflow exports that contain secrets.
 
-n8n is [fair-code](https://faircode.io) distributed under the [Sustainable Use License](https://github.com/n8n-io/n8n/blob/master/LICENSE.md) and [n8n Enterprise License](https://github.com/n8n-io/n8n/blob/master/LICENSE_EE.md).
+The production service uses the official Docker image. Changes to this fork do not reach production until the Railway service is deliberately moved to a source build.
 
-- **Source Available**: Always visible source code
-- **Self-Hostable**: Deploy anywhere
-- **Extensible**: Add your own nodes and functionality
+## Upstream and license
 
-[Enterprise Licenses](mailto:license@n8n.io) available for additional features and support.
-
-Additional information about the license model can be found in the [docs](https://docs.n8n.io/sustainable-use-license/).
-
-## Contributing
-
-Found a bug 🐛 or have a feature idea ✨? Check our [Contributing Guide](https://github.com/n8n-io/n8n/blob/master/CONTRIBUTING.md) for a setup guide & best practices.
-
-## Join the Team
-
-Want to shape the future of automation? Check out our [job posts](https://n8n.io/careers) and join our team!
-
-## What does n8n mean?
-
-**Short answer:** It means "nodemation" and is pronounced as n-eight-n.
-
-**Long answer:** "I get that question quite often (more often than I expected) so I decided it is probably best to answer it here. While looking for a good name for the project with a free domain I realized very quickly that all the good ones I could think of were already taken. So, in the end, I chose nodemation. 'node-' in the sense that it uses a Node-View and that it uses Node.js and '-mation' for 'automation' which is what the project is supposed to help with. However, I did not like how long the name was and I could not imagine writing something that long every time in the CLI. That is when I then ended up on 'n8n'." - **Jan Oberhauser, Founder and CEO, n8n.io**
+The upstream source is distributed under the [Sustainable Use License](./LICENSE.md) and [n8n Enterprise License](./LICENSE_EE.md). See the [official n8n documentation](https://docs.n8n.io/) for product documentation.
